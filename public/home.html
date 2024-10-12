@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBXSTATS / PASTEBIN</title>
+    <link rel="icon" type="image/x-icon" href="https://forum.rbxstats.xyz/assets/logo-hrnbtj2z.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1a202c; /* Dark gray */
+            color: #cbd5e0; /* Light gray */
+            overflow-x: hidden;
+            transition: background-color 0.5s;
+        }
+        header {
+            background-color: #2d3748; /* Darker gray */
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            animation: fadeIn 0.5s ease-in;
+        }
+        button {
+            background-color: #3182ce; /* Blue */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            background-color: #2b6cb0; /* Darker blue */
+            transform: scale(1.05);
+        }
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 16px;
+            background-color: #2d3748; /* Darker gray */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.5s ease-in-out;
+        }
+        .paste-list {
+            flex: 1;
+            padding-right: 20px;
+            border-right: 1px solid #4a5568; /* Medium gray */
+        }
+        .editor-container {
+            flex: 2;
+            padding-left: 20px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #e2e8f0; /* Light gray */
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #edf2f7; /* Very light gray */
+        }
+        input[type="text"], input[type="date"], textarea {
+            padding: 10px;
+            border: 1px solid #4a5568; /* Medium gray */
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #4a5568; /* Medium gray */
+            color: #cbd5e0; /* Light gray */
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="date"]:focus {
+            border-color: #3182ce; /* Blue */
+            outline: none;
+        }
+        #editor {
+            border: 1px solid #4a5568; /* Medium gray */
+            padding: 10px;
+            min-height: 200px;
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+            background-color: #2d3748; /* Darker gray */
+            color: #cbd5e0; /* Light gray */
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+        .toolbar {
+            margin-bottom: 10px;
+        }
+        .toolbar button {
+            margin-right: 5px;
+            padding: 6px 10px;
+            border: 1px solid #4a5568; /* Medium gray */
+            border-radius: 4px;
+            background-color: #4a5568; /* Medium gray */
+            color: #cbd5e0; /* Light gray */
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .toolbar button:hover {
+            background-color: #3182ce; /* Blue */
+            transform: scale(1.05);
+        }
+        footer {
+            background-color: #2d3748; /* Darker gray */
+            color: #e2e8f0; /* Light gray */
+            padding: 16px;
+            text-align: center;
+            margin-top: 32px;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Paste List Styles */
+        #pasteList {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #4a5568; /* Medium gray */
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .paste-item {
+            padding: 10px;
+            border-bottom: 1px solid #2d3748; /* Darker gray */
+            transition: background-color 0.3s;
+        }
+        .paste-item:hover {
+            background-color: #2b6cb0; /* Hover effect */
+            color: white;
+        }
+
+        .paste-item {
+            background-color: #4a5568; /* Dark background for the paste item */
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .paste-item:hover {
+            background-color: #2b6cb0; /* Hover effect color */
+        }
+
+        .paste-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px; /* Space between buttons */
+        }
+
+        h3 {
+            margin: 0; /* Remove default margin for better alignment */
+        }
+
+        .text-sm {
+            font-size: 0.875rem; /* Smaller text size for details */
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Header section -->
+    <header>
+        <h1>📃 Rbxstats Pastebin</h1>
+        <button id="logoutBtn">Logout</button>
+    </header>
+
+    <!-- Main content section -->
+    <div class="container">
+        <div class="paste-list">
+            <h2>List of Recently Created Pastes</h2>
+            <!-- Placeholder for displaying pastes -->
+            <div id="pasteList">
+                <div class="paste-item">Paste 1</div>
+                <div class="paste-item">Paste 2</div>
+                <div class="paste-item">Paste 3</div>
+                <div class="paste-item">Paste 4</div>
+                <div class="paste-item">Paste 5</div>
+                <div class="paste-item">Paste 6</div>
+                <div class="paste-item">Paste 7</div>
+                <div class="paste-item">Paste 8</div>
+            </div>
+        </div>
+        <div class="editor-container">
+            <h2 id="welcomeMessage"></h2>
+            <!-- Form to create a new paste -->
+            <form id="createPasteForm" onsubmit="return getContent()">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+
+                <div class="toolbar">
+                    <button type="button" onclick="format('bold')"><strong>B</strong></button>
+                    <button type="button" onclick="format('italic')"><em>I</em></button>
+                    <button type="button" onclick="format('underline')"><u>U</u></button>
+                    <button type="button" onclick="format('insertOrderedList')">OL</button>
+                    <button type="button" onclick="format('insertUnorderedList')">UL</button>
+                    <button type="button" onclick="format('createLink', prompt('Enter URL:'))">Link</button>
+                    <button type="button" onclick="format('undo')">Undo</button>
+                    <button type="button" onclick="format('redo')">Redo</button>
+                </div>
+            
+                <div id="editor" contenteditable="true"></div>
+                <textarea id="content" name="content" style="display:none"></textarea>
+            
+                <script>
+                    function format(command, value = null) {
+                        document.execCommand(command, false, value);
+                    }
+
+                    function getContent() {
+                        document.getElementById("content").value = document.getElementById("editor").innerHTML;
+                        return true; // Allow form submission
+                    }
+                </script>
+
+                <div class="form-group">
+                    <label for="expiration_date">Expiration Date (Optional)</label>
+                    <input type="date" id="expiration_date" name="expiration_date">
+                </div>
+                <button type="submit">Create Paste</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer section -->
+    <footer>
+        <p>&copy; 2024 Pastebin Web Application. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Function to fetch and display pastes
+        async function fetchAndDisplayPastes() {
+    try {
+        const response = await axios.get('/api/pastes');
+        const pastes = response.data;
+        const pasteList = document.getElementById('pasteList');
+        const currentUser = await getCurrentUser();
+        pasteList.innerHTML = ''; // Clear previous content
+
+        pastes.forEach(paste => {
+            const pasteItem = document.createElement('div');
+            pasteItem.className = 'paste-item'; // Use your existing CSS class for styling
+            pasteItem.innerHTML = `
+                <div class="paste-header flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-200">${paste.title}</h3>
+                    <div class="actions">
+                        <button class="bg-green-500 text-white px-2 py-1 rounded-md mr-1" onclick="updatePaste('${paste._id}')">Update</button>
+                        <button class="bg-red-500 text-white px-2 py-1 rounded-md mr-1" onclick="deletePaste('${paste._id}', '${paste.title}')">Delete</button>
+                        <button class="bg-gray-500 text-white px-2 py-1 rounded-md" onclick="window.open('/api/pastes/${paste._id}/page', '_blank')">Open</button>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm mt-1">Created at: ${new Date(paste.created_at).toLocaleString()}</p>
+                ${paste.expiration_date ? `<p class="text-red-500 text-sm mt-1">Expires at: ${new Date(paste.expiration_date).toLocaleString()}</p>` : ''}
+                <p class="text-blue-500 text-sm mt-1"><a href="/api/pastes/${paste._id}">View [ID: ${paste._id}]</a></p>
+            `;
+            pasteList.appendChild(pasteItem);
+        });
+    } catch (error) {
+        console.error('Error fetching pastes:', error);
+    }
+}
+
+        // Function to handle form submission
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            try {
+                await axios.post('/api/pastes', Object.fromEntries(formData));
+                form.reset(); // Clear form fields
+                fetchAndDisplayPastes(); // Refresh paste list
+            } catch (error) {
+                console.error('Error creating paste:', error);
+            }
+        }
+
+        // Function to handle paste update
+        async function updatePaste(pasteId) {
+            try {
+                const response = await axios.get(`/api/pastes/${pasteId}`);
+                const paste = response.data;
+
+                const popup = window.open('', '_blank', 'width=400,height=300');
+
+                const formHtml = `
+                    <html>
+                    <head>
+                        <title>Edit Paste</title>
+                        <style>
+                            body {
+                                font-family: Arial, sans-serif;
+                                background-color: #1a202c; /* Dark background */
+                                color: #f7fafc; /* Light text color */
+                                padding: 20px;
+                            }
+                            h2 {
+                                color: #e2e8f0; /* Lighter header color */
+                            }
+                            input[type="text"],
+                            textarea {
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #4a5568; /* Border color */
+                                border-radius: 5px;
+                                background-color: #2d3748; /* Dark input background */
+                                color: #f7fafc; /* Light input text */
+                                margin-bottom: 10px;
+                            }
+                            input[type="date"] {
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #4a5568; /* Border color */
+                                border-radius: 5px;
+                                background-color: #2d3748; /* Dark input background */
+                                color: #f7fafc; /* Light input text */
+                                margin-bottom: 10px;
+                            }
+                            button {
+                                background-color: #4CAF50; /* Green button */
+                                color: white;
+                                padding: 10px 20px;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;
+                                transition: background-color 0.3s;
+                            }
+                            button:hover {
+                                background-color: #45a049; /* Darker green on hover */
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Edit Paste</h2>
+                        <form id="editPasteForm">
+                            <label for="newTitle">Title:</label><br>
+                            <input type="text" id="newTitle" name="newTitle" value="${paste.title}" required><br>
+                            <label for="newContent">Content:</label><br>
+                            <textarea id="newContent" name="newContent" rows="4" required>${paste.content}</textarea><br>
+                            <label for="newExpirationDate">Expiration Date:</label><br>
+                            <input type="date" id="newExpirationDate" name="newExpirationDate" value="${new Date(paste.expiration_date).toISOString().slice(0, 10)}" required><br><br>
+                            <button type="submit">Update Paste</button>
+                        </form>
+                    </body>
+                    </html>
+                `;
+
+                popup.document.write(formHtml);
+
+                // Prevent the form from being submitted and handle the update logic
+                popup.document.getElementById('editPasteForm').addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const newTitle = popup.document.getElementById('newTitle').value;
+                    const newContent = popup.document.getElementById('newContent').value;
+                    const newExpirationDate = popup.document.getElementById('newExpirationDate').value;
+                    
+                    try {
+                        // Update the paste with the new title and content
+                        const updatedPaste = await axios.put(`/api/pastes/${pasteId}`, {
+                            title: newTitle,
+                            content: newContent,
+                            expiration_date: newExpirationDate
+                        });
+                        
+                        console.log('Paste updated successfully:', updatedPaste.data);
+                        popup.close(); // Close the popup window
+                        fetchAndDisplayPastes(); // Refresh paste list
+                    } catch (error) {
+                        console.error('Error updating paste:', error);
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching paste data:', error);
+            }
+        }
+
+
+        // Function to handle paste deletion
+        async function deletePaste(pasteId, title) {
+            try {
+                let ans = prompt(`Enter ${title} to confirm deletion:`);
+                if(ans != title) return;
+                await axios.delete(`/api/pastes/${pasteId}`);
+                fetchAndDisplayPastes(); // Refresh paste list
+                console.log('Delete paste with ID:', pasteId);
+            } catch (error) {
+                console.error('Error deleting paste:', error);
+            }
+        }
+
+        // Add event listener to logout button
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await axios.post('/logout');
+                window.location.href = '/login_page';
+            } catch (error) {
+                console.error('Error logging out:', error);
+            }
+        });
+
+        // Function to get greeting message based on time
+        function getGreetingMessage() {
+            const now = new Date();
+            const hour = now.getHours();
+
+            if (hour < 12) {
+                return 'Good Morning';
+            } else if (hour < 18) {
+                return 'Good Afternoon';
+            } else {
+                return 'Good Evening';
+            }
+        }
+
+        async function getCurrentUser() {
+            try {
+                const response = await axios.get('/current_user');
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching current user:', error);
+                return null;
+            }
+        }
+
+        async function displayCurrentUser() {
+            const currentUser = await getCurrentUser();
+            if (currentUser) {
+                console.log('Username:', currentUser.username);
+                console.log('Email:', currentUser.email);
+                const welcomeMessage = document.getElementById('welcomeMessage');
+                welcomeMessage.textContent = `${getGreetingMessage()} `;
+                const usernameSpan = document.createElement('code');
+                usernameSpan.textContent = currentUser.username + '!';
+                usernameSpan.classList.add('text-green-700');
+                welcomeMessage.appendChild(usernameSpan);
+                const userEmailElement = document.getElementById('userEmail');
+                userEmailElement.textContent = `Email: ${currentUser.email}`;
+            } else {
+                console.log('No user is currently logged in.');
+            }
+        }
+
+        // Add event listener to form submission
+        document.getElementById('createPasteForm').addEventListener('submit', handleFormSubmit);
+
+        // Fetch and display pastes on page load
+        fetchAndDisplayPastes();
+
+        // Display current user's information
+        displayCurrentUser();
+    </script>
+</body>
+</html>

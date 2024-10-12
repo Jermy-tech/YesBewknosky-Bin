@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - RBXSTATS / PASTEBIN</title>
+    <link rel="icon" type="image/x-icon" href="https://forum.rbxstats.xyz/assets/logo-hrnbtj2z.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #0f0f0f, #1a1a1a);
+            color: #e5e7eb;
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        h2 {
+            animation: fadeInDown 1s ease-in-out;
+        }
+
+        form {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+            border-radius: 16px;
+            padding: 32px;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        form:hover {
+            transform: scale(1.02);
+        }
+
+        input {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #e5e7eb;
+            transition: background 0.3s ease-in-out;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+        }
+
+        button {
+            transition: background 0.3s ease-in-out, transform 0.1s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+            transform: scale(1.05);
+        }
+
+        a {
+            color: #60a5fa;
+            transition: color 0.2s;
+        }
+
+        a:hover {
+            color: #3b82f6;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mx-auto max-w-md mt-20">
+        <h2 class="text-3xl font-bold text-center mb-8">Create an Account</h2>
+        <form id="registerForm" class="shadow-md">
+            <div class="mb-4">
+                <label for="username" class="block text-sm font-semibold mb-2">Username</label>
+                <input type="text" id="username" name="username" class="rounded w-full py-2 px-3" required>
+            </div>
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-semibold mb-2">Email</label>
+                <input type="email" id="email" name="email" class="rounded w-full py-2 px-3" required>
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-semibold mb-2">Password</label>
+                <input type="password" id="password" name="password" class="rounded w-full py-2 px-3 mb-3" required>
+            </div>
+            <div class="flex items-center justify-between">
+                <button type="submit"
+                    class="bg-blue-500 text-white font-bold py-2 px-4 rounded focus:outline-none">Register</button>
+                <a href="/login_page" class="font-bold text-sm">Already have an account? Login</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            try {
+                const response = await axios.post('/register', Object.fromEntries(formData));
+                if (response.status === 201) {
+                    alert('Registration successful');
+                    window.location.href = '/login_page';
+                } else {
+                    alert('Registration failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error registering:', error);
+                alert('An error occurred while registering. Please try again later.');
+            }
+        });
+    </script>
+</body>
+
+</html>
