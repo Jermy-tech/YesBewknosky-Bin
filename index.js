@@ -70,15 +70,33 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // Function to validate CAPTCHA with Cloudflare
-async function validateCaptcha(token, secretKey) {
-    const response = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
-        params: {
-            secret: secretKey,
-            response: token,
-        },
-    });
+async function validateCaptcha(token, secretKey, request) {
+    const ip = request.headers.get("CF-Connecting-IP");
 
-    return response.data.success;
+    let formData = new URLSearchParams();
+    formData.append("secret", secretKey);
+    formData.append("response", token);
+    formData.append("remoteip", ip);
+
+    try {
+        const response = await axios.post(
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            formData, // Send formData in the body
+            {
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded' 
+                },
+            }
+        );
+
+        const outcome = response.data; // Access the response JSON directly
+
+        return outcome.success; // Return true or false based on success
+
+    } catch (error) {
+        console.error('CAPTCHA validation error:', error);
+        return false;
+    }
 }
 
 // User registration endpoint
