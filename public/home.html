@@ -304,8 +304,6 @@
         async function handleFormSubmit(event) {
             const currentUser = await getCurrentUser();
             if (!currentUser) {
-                // If not logged in, redirect or show a message
-                alert('You must be logged in to make a post.');
                 window.location.href = '/login_page'; // Redirect to login page
                 return; // Stop further execution
             }
@@ -483,7 +481,8 @@
                 const userEmailElement = document.getElementById('userEmail');
                 userEmailElement.textContent = `Email: ${currentUser.email}`;
             } else {
-                console.log('No user is currently logged in.');
+                window.location.href = '/login_page'; // Redirect to login page
+                return; // Stop further execution
             }
         }
 
