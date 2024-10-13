@@ -258,14 +258,14 @@
     <script>
 
         async function getCurrentUser() {
-            try {
-                const response = await axios.get('/current_user');
-                return response.data; // Assuming this returns the user object or null if not logged in
-            } catch (error) {
-                console.error('Error fetching current user:', error);
-                return null;
-            }
-        }
+                    try {
+                        const response = await axios.get('/current_user');
+                        return response.data;
+                    } catch (error) {
+                        console.error('Error fetching current user:', error);
+                        return null;
+                    }
+                }
 
         async function fetchAndDisplayPastes() {
     try {
@@ -307,7 +307,15 @@
 
         // Function to handle form submission
         async function handleFormSubmit(event) {
+            const currentUser = await getCurrentUser();
+            if (!currentUser) {
+                // If not logged in, redirect or show a message
+                alert('You must be logged in to view pastes.');
+                window.location.href = '/login_page'; // Redirect to login page
+                return; // Stop further execution
+            }
             event.preventDefault();
+
             const form = event.target;
             const formData = new FormData(form);
 
@@ -454,16 +462,6 @@
                 return 'Good Afternoon';
             } else {
                 return 'Good Evening';
-            }
-        }
-
-        async function getCurrentUser() {
-            try {
-                const response = await axios.get('/current_user');
-                return response.data;
-            } catch (error) {
-                console.error('Error fetching current user:', error);
-                return null;
             }
         }
 
