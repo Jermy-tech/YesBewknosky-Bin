@@ -21,9 +21,9 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: true, // Only allow cookies over HTTPS
+        sameSite: 'none',
+        secure: false, // Only allow cookies over HTTPS
         httpOnly: true, // Prevent client-side JS access
-        sameSite: 'lax', // Helps with cross-site requests
         maxAge: 1000 * 60 * 30 // 30 minutes expiration
     }
 }));
