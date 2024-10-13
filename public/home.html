@@ -272,14 +272,6 @@
 
         async function fetchAndDisplayPastes() {
     try {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
-            // If not logged in, redirect or show a message
-            alert('You must be logged in to view pastes.');
-            window.location.href = '/login_page'; // Redirect to login page
-            return; // Stop further execution
-        }
-
         const response = await axios.get('/api/pastes');
         const pastes = response.data;
         const pasteList = document.getElementById('pasteList');
@@ -313,7 +305,7 @@
             const currentUser = await getCurrentUser();
             if (!currentUser) {
                 // If not logged in, redirect or show a message
-                alert('You must be logged in to view pastes.');
+                alert('You must be logged in to make a post.');
                 window.location.href = '/login_page'; // Redirect to login page
                 return; // Stop further execution
             }
