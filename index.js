@@ -90,7 +90,7 @@ async function validateCaptcha(token, secretKey, request) {
         );
 
         const outcome = response.data; // Access the response JSON directly
-
+        console.log(outcome)
         return outcome.success; // Return true or false based on success
 
     } catch (error) {
