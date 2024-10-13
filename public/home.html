@@ -94,15 +94,23 @@
         #editor {
             border: 1px solid #4a5568; /* Medium gray */
             padding: 10px;
-            min-height: 200px;
-            width: 100%;
+            min-height: 200px; /* Minimum height */
+            max-height: 400px; /* Set a maximum height */
+            width: 100%; 
+            max-width: 920px; /* Set a max width */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             margin-bottom: 10px;
             background-color: #2d3748; /* Darker gray */
             color: #cbd5e0; /* Light gray */
             border-radius: 6px;
             transition: background-color 0.3s;
+
+            /* Ensure content fits within bounds */
+            box-sizing: border-box; /* Include padding/border in size */
+            overflow-wrap: break-word; /* Break long words */
+            overflow: auto; /* Add scrollbars if content overflows */
         }
+
         .toolbar {
             margin-bottom: 10px;
         }
@@ -481,8 +489,8 @@
                 const userEmailElement = document.getElementById('userEmail');
                 userEmailElement.textContent = `Email: ${currentUser.email}`;
             } else {
-                window.location.href = '/login_page'; // Redirect to login page
-                return; // Stop further execution
+                //window.location.href = '/login_page'; // Redirect to login page
+                //return; // Stop further execution
             }
         }
 
