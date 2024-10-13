@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const path = require('path');
 const cron = require('node-cron');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const shortId = require('shortid');
 
 const app = express();
@@ -15,16 +16,24 @@ mongoose.connect(mongoAtlasUri, { serverSelectionTimeoutMS: 3000 });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-// Session middleware configuration
+// Configure session middleware
 app.use(session({
     secret: process.env.SECURITY_KEY,
-    resave: true,
-    saveUninitialized: true
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 14 * 24 * 60 * 60 * 1000 }, // 14 days
+    store: MongoStore.create({
+        mongoUrl: mongoAtlasUri,
+        collectionName: 'sessions',
+        ttl: 14 * 24 * 60 * 60 // 14 days
+    }),
 }));
-
 
 // EJS template files
 app.set('views', path.join(__dirname, 'views'));
+
+// Middleware to parse JSON request body
+app.use(express.json());
 
 // Main route / Login
 app.get(['/', '/login_page'], (req, res) => {
@@ -37,17 +46,17 @@ app.get('/register_page', (req, res) => {
 });
 
 // Serve pastes page
-app.get('/pastes', (req, res) => {
-    // Check if user is logged in
+function checkAuthentication(req, res, next) {
     if (req.session && req.session.userId) {
-        res.sendFile(path.join(__dirname, 'public', 'home.html'));
+        next(); // User is authenticated
     } else {
-        res.redirect('/login_page');
+        res.redirect('/login_page'); // Redirect to login page
     }
-});
+}
 
-// Middleware to parse JSON request body
-app.use(express.json());
+app.get('/pastes', checkAuthentication, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
 
 // Define schema and model for pastes
 const pasteSchema = new mongoose.Schema({
@@ -65,7 +74,7 @@ const Paste = mongoose.model('Paste', pasteSchema);
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true},
+    password: { type: String, required: true },
 });
 
 const User = mongoose.model('User', userSchema);
@@ -199,8 +208,12 @@ app.delete('/api/pastes/:id', async (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-    req.session.destroy();
-    res.status(200).json({ message: 'Logged out successfully' });
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ message: 'Could not log out' });
+        }
+        res.status(200).json({ message: 'Logged out successfully' });
+    });
 });
 
 app.get('/current_user', async (req, res) => {
@@ -221,6 +234,12 @@ app.listen(PORT, () => {
         console.log('Running auto-deletion task...');
         await Paste.deleteExpiredPastes();
     });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
 });
 
 module.exports = app;
