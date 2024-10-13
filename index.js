@@ -5,6 +5,7 @@ const path = require('path');
 const cron = require('node-cron');
 const session = require('express-session');
 const shortId = require('shortid');
+require('dotenv').config();
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -69,10 +70,32 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// Function to validate CAPTCHA with Cloudflare
+async function validateCaptcha(token) {
+    const secretKey = process.env.TURNSTILE_SECRET_KEY; // Use environment variable
+
+    const response = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
+        params: {
+            secret: secretKey,
+            response: token,
+        },
+    });
+
+    return response.data.success;
+}
+
 // User registration endpoint
 app.post('/register', async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email, password, 'cf-turnstile-response': captchaResponse } = req.body;
+
+        // Validate CAPTCHA
+        const isCaptchaValid = await validateCaptcha(captchaResponse);
+        if (!isCaptchaValid) {
+            return res.status(400).json({ message: 'CAPTCHA validation failed' });
+        }
+
+        // Proceed with user registration
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({ username, email, password: hashedPassword });
         await user.save();
