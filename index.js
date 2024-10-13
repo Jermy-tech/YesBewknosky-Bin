@@ -5,7 +5,6 @@ const path = require('path');
 const cron = require('node-cron');
 const session = require('express-session');
 const shortId = require('shortid');
-require('dotenv').config();
 
 const app = express();
 app.set('view engine', 'ejs');
