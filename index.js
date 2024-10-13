@@ -71,9 +71,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // Function to validate CAPTCHA with Cloudflare
-async function validateCaptcha(token) {
-    const secretKey = process.env.TURNSTILE_SECRET_KEY; // Use environment variable
-
+async function validateCaptcha(token, secretKey) {
     const response = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
         params: {
             secret: secretKey,
@@ -87,10 +85,11 @@ async function validateCaptcha(token) {
 // User registration endpoint
 app.post('/register', async (req, res) => {
     try {
+        const secretKey = process.env.SIGNUP_SECRET; // Use environment variable
         const { username, email, password, 'cf-turnstile-response': captchaResponse } = req.body;
 
         // Validate CAPTCHA
-        const isCaptchaValid = await validateCaptcha(captchaResponse);
+        const isCaptchaValid = await validateCaptcha(captchaResponse, secretKey);
         if (!isCaptchaValid) {
             return res.status(400).json({ message: 'CAPTCHA validation failed' });
         }
@@ -108,9 +107,16 @@ app.post('/register', async (req, res) => {
 // User login endpoint
 app.post('/login', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const secretKey = process.env.LOGIN_SECRET; // Use environment variable
+        const { username, password, 'cf-turnstile-response': captchaResponse } = req.body;
         const user = await User.findOne({ username });
-        
+
+        // Validate CAPTCHA
+        const isCaptchaValid = await validateCaptcha(captchaResponse, secretKey);
+        if (!isCaptchaValid) {
+            return res.status(400).json({ message: 'CAPTCHA validation failed' });
+        }
+
         // Check if user exists and password is correct
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ message: 'Invalid username or password' });
@@ -140,7 +146,14 @@ pasteSchema.statics.deleteExpiredPastes = async function() {
 // REST API endpoints
 app.post('/api/pastes', async (req, res) => {
     try {
-        const { title, content, expiration_date } = req.body;
+        const secretKey = process.env.POST_SECRET; // Use environment variable
+        const { title, content, expiration_date, 'cf-turnstile-response': captchaResponse } = req.body;
+        // Validate CAPTCHA
+        const isCaptchaValid = await validateCaptcha(captchaResponse, secretKey);
+        if (!isCaptchaValid) {
+            return res.status(400).json({ message: 'CAPTCHA validation failed' });
+        }
+
         const author = req.session.userId;
         const paste = new Paste({ title, content, expiration_date, author });
         await paste.save();
