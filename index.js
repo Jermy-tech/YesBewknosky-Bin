@@ -15,11 +15,17 @@ mongoose.connect(mongoAtlasUri, { serverSelectionTimeoutMS: 3000 });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-// Configure session middleware
+// Session middleware configuration
 app.use(session({
-    secret: 'mySecret',
+    secret: process.env.SECURITY_KEY,
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+        secure: true, // Only allow cookies over HTTPS
+        httpOnly: true, // Prevent client-side JS access
+        sameSite: 'lax', // Helps with cross-site requests
+        maxAge: 1000 * 60 * 30 // 30 minutes expiration
+    }
 }));
 
 // EJS template files
