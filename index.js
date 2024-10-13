@@ -18,15 +18,10 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 // Session middleware configuration
 app.use(session({
     secret: process.env.SECURITY_KEY,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        sameSite: 'none',
-        secure: false, // Only allow cookies over HTTPS
-        httpOnly: true, // Prevent client-side JS access
-        maxAge: 1000 * 60 * 30 // 30 minutes expiration
-    }
+    resave: true,
+    saveUninitialized: true
 }));
+
 
 // EJS template files
 app.set('views', path.join(__dirname, 'views'));
