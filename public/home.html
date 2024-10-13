@@ -256,13 +256,30 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-        // Function to fetch and display pastes
+
+        async function getCurrentUser() {
+            try {
+                const response = await axios.get('/current_user');
+                return response.data; // Assuming this returns the user object or null if not logged in
+            } catch (error) {
+                console.error('Error fetching current user:', error);
+                return null;
+            }
+        }
+
         async function fetchAndDisplayPastes() {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            // If not logged in, redirect or show a message
+            alert('You must be logged in to view pastes.');
+            window.location.href = '/login_page'; // Redirect to login page
+            return; // Stop further execution
+        }
+
         const response = await axios.get('/api/pastes');
         const pastes = response.data;
         const pasteList = document.getElementById('pasteList');
-        const currentUser = await getCurrentUser();
         pasteList.innerHTML = ''; // Clear previous content
 
         pastes.forEach(paste => {
