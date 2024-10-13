@@ -244,6 +244,7 @@
                     <label for="expiration_date">Expiration Date (Optional)</label>
                     <input type="date" id="expiration_date" name="expiration_date">
                 </div>
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAAAxVyUPMJG-n2cmq"></div>
                 <button type="submit">Create Paste</button>
             </form>
         </div>
@@ -318,6 +319,15 @@
 
             const form = event.target;
             const formData = new FormData(form);
+
+            const turnstileResponse = form.querySelector('.cf-turnstile [name="cf-turnstile-response"]').value;
+
+            if (!turnstileResponse) {
+                alert('Please complete the CAPTCHA.');
+                return;
+            }
+
+            formData.append('cf-turnstile-response', turnstileResponse);
 
             try {
                 await axios.post('/api/pastes', Object.fromEntries(formData));

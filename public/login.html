@@ -75,6 +75,8 @@
             }
         }
     </style>
+
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
 <body>
@@ -88,6 +90,12 @@
             <div class="mb-6">
                 <label for="password" class="block text-sm font-semibold mb-2">Password</label>
                 <input type="password" id="password" name="password" class="rounded w-full py-2 px-3 mb-3" required>
+            
+            <!-- Turnstile Captcha -->
+            <div class="mb-6">
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAAAxVzita0kpseuRi"></div>
+            </div>
+
             </div>
             <div class="flex items-center justify-between">
                 <button type="submit"
@@ -104,6 +112,16 @@
             const form = event.target;
             const formData = new FormData(form);
 
+            // Get the captcha response
+            const turnstileResponse = form.querySelector('.cf-turnstile [name="cf-turnstile-response"]').value;
+
+            if (!turnstileResponse) {
+                alert('Please complete the CAPTCHA.');
+                return;
+            }
+
+            formData.append('cf-turnstile-response', turnstileResponse);
+            
             try {
                 const response = await axios.post('/login', Object.fromEntries(formData));
                 if (response.status === 200) {
