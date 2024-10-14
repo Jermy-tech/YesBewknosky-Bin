@@ -219,7 +219,7 @@
         <div class="editor-container">
             <h2 id="welcomeMessage"></h2>
             <!-- Form to create a new paste -->
-            <form id="createPasteForm" onsubmit="return getContent()">
+            <form id="createPasteForm">
                 <div class="form-group">
                     <label for="title">Title</label>
                     <input type="text" id="title" name="title" required>
@@ -268,57 +268,57 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
 
+        function format(command, value = null) {
+                document.execCommand(command, false, value);
+            }
         async function getCurrentUser() {
-                    try {
-                        const response = await axios.get('/current_user');
-                        return response.data;
-                    } catch (error) {
-                        console.error('Error fetching current user:', error);
-                        return null;
-                    }
+                try {
+                    const response = await axios.get('/current_user');
+                    return response.data;
+                } catch (error) {
+                    console.error('Error fetching current user:', error);
+                    return null;
                 }
+            }
 
         async function fetchAndDisplayPastes() {
-    try {
-        const response = await axios.get('/api/pastes');
-        const pastes = response.data;
-        const pasteList = document.getElementById('pasteList');
-        pasteList.innerHTML = ''; // Clear previous content
+            try {
+                const response = await axios.get('/api/pastes');
+                const pastes = response.data;
+                const pasteList = document.getElementById('pasteList');
+                pasteList.innerHTML = ''; // Clear previous content
 
-        pastes.forEach(paste => {
-            const pasteItem = document.createElement('div');
-            pasteItem.className = 'paste-item'; // Use your existing CSS class for styling
-            pasteItem.innerHTML = `
-                <div class="paste-header flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-200">${paste.title}</h3>
-                    <div class="actions">
-                        <button class="bg-green-500 text-white px-2 py-1 rounded-md mr-1" onclick="updatePaste('${paste._id}')">Update</button>
-                        <button class="bg-red-500 text-white px-2 py-1 rounded-md mr-1" onclick="deletePaste('${paste._id}', '${paste.title}')">Delete</button>
-                        <button class="bg-gray-500 text-white px-2 py-1 rounded-md" onclick="window.open('/api/pastes/${paste._id}/page', '_blank')">Open</button>
-                    </div>
-                </div>
-                <p class="text-gray-500 text-sm mt-1">Created at: ${new Date(paste.created_at).toLocaleString()}</p>
-                ${paste.expiration_date ? `<p class="text-red-500 text-sm mt-1">Expires at: ${new Date(paste.expiration_date).toLocaleString()}</p>` : ''}
-                <p class="text-blue-500 text-sm mt-1"><a href="/api/pastes/${paste._id}">View [ID: ${paste._id}]</a></p>
-            `;
-            pasteList.appendChild(pasteItem);
-        });
-    } catch (error) {
-        console.error('Error fetching pastes:', error);
-    }
-}
-
-        // Function to handle form submission
-        async function handleFormSubmit(event) {
-            const currentUser = await getCurrentUser();
-            if (!currentUser) {
-                window.location.href = '/login_page'; // Redirect to login page
-                return; // Stop further execution
+                pastes.forEach(paste => {
+                    const pasteItem = document.createElement('div');
+                    pasteItem.className = 'paste-item'; // Use your existing CSS class for styling
+                    pasteItem.innerHTML = `
+                        <div class="paste-header flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-gray-200">${paste.title}</h3>
+                            <div class="actions">
+                                <button class="bg-green-500 text-white px-2 py-1 rounded-md mr-1" onclick="updatePaste('${paste._id}')">Update</button>
+                                <button class="bg-red-500 text-white px-2 py-1 rounded-md mr-1" onclick="deletePaste('${paste._id}', '${paste.title}')">Delete</button>
+                                <button class="bg-gray-500 text-white px-2 py-1 rounded-md" onclick="window.open('/api/pastes/${paste._id}/page', '_blank')">Open</button>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 text-sm mt-1">Created at: ${new Date(paste.created_at).toLocaleString()}</p>
+                        ${paste.expiration_date ? `<p class="text-red-500 text-sm mt-1">Expires at: ${new Date(paste.expiration_date).toLocaleString()}</p>` : ''}
+                        <p class="text-blue-500 text-sm mt-1"><a href="/api/pastes/${paste._id}">View [ID: ${paste._id}]</a></p>
+                    `;
+                    pasteList.appendChild(pasteItem);
+                });
+            } catch (error) {
+                console.error('Error fetching pastes:', error);
             }
-            event.preventDefault();
+        }
+
+        async function handleFormSubmit(event) {
+            event.preventDefault(); // Prevent the default form submission
 
             const form = event.target;
             const formData = new FormData(form);
+
+            // Get content from the editor and set it in the hidden textarea
+            document.getElementById("content").value = document.getElementById("editor").innerHTML;
 
             const turnstileResponse = form.querySelector('.cf-turnstile [name="cf-turnstile-response"]').value;
 
