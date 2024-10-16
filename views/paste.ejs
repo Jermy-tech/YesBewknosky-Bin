@@ -8,7 +8,6 @@
     <link rel="icon" type="image/x-icon" href="https://forum.rbxstats.xyz/assets/logo-hrnbtj2z.png">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        /* Custom styles for animations */
         .fade-in {
             animation: fadeIn 0.5s ease-in-out;
         }
@@ -27,39 +26,32 @@
             transition: transform 0.3s ease;
         }
 
-        /* Enclosed box styling */
         .enclosed-box {
-            background-color: #1e1e2f; /* Darker background for the box */
+            background-color: #1e1e2f;
             border-radius: 8px;
-            padding: 1rem; /* Padding for the text inside */
-            margin-bottom: 1rem; /* Space below the box */
-        }
-
-        /* Remove default list styles and padding */
-        ul {
-            list-style-type: none; /* No bullets */
-            padding: 0; /* No padding */
-            margin: 0; /* No margin */
+            padding: 1rem;
+            margin-bottom: 1rem;
+            height: 200px;
+            overflow: auto;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 
 <body class="bg-gray-900 text-white">
     <div class="container mx-auto px-4 py-8">
-        <!-- Back button -->
         <a href="/pastes" class="inline-block mb-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded">
             &larr; Back to Pastes
         </a>
-        
+
         <div class="bg-gray-800 shadow-lg rounded-lg p-6 flex flex-col lg:flex-row fade-in">
             <div class="flex-1 mb-4 lg:mb-0 lg:mr-4">
                 <h2 class="text-3xl font-bold mb-2 text-blue-400"><%= paste.title %></h2>
-                
-                <!-- Enclosed box for text content -->
-                <div class="enclosed-box">
-                    <%= paste.content.replace(/^\s+|\s+$/g, '') %> <!-- Trim spaces on both ends -->
+
+                <div class="enclosed-box" id="paste-content">
+                    <%= paste.content.replace(/^\s+|\s+$/g, '') %>
                 </div>
-                
+
                 <div class="flex space-x-4">
                     <button id="copy-button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                         Copy
@@ -67,11 +59,11 @@
                     <button id="download-button" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">
                         Download as .txt
                     </button>
-                    <!-- New Raw button -->
                     <button id="raw-button" class="bg-gray-500 hover:bg-gray-400 text-white font-semibold py-2 px-4 rounded">
                         Raw
                     </button>
                 </div>
+
                 <div class="mt-4 text-gray-400">
                     <p>Author: <%= paste.author.username %></p>
                     <p>Created at: <%= new Date(paste.created_at).toLocaleString() %></p>
@@ -80,51 +72,46 @@
                     <% } %>
                 </div>
             </div>
-            <img src="https://source.unsplash.com/400x300/?<%= encodeURIComponent(paste.title) %>" 
-                 alt="Image related to <%= paste.title %>" 
-                 class="mb-4 rounded-lg shadow-lg transform-hover transition-transform duration-300" 
-                 width="400" height="300">
+            <img src="https://source.unsplash.com/400x300/?<%= encodeURIComponent(paste.title) %>"
+                alt="Image related to <%= paste.title %>"
+                class="mb-4 rounded-lg shadow-lg transform-hover transition-transform duration-300"
+                width="400" height="300">
         </div>
     </div>
 
     <script>
-        // Copy to clipboard function
-        document.getElementById('copy-button').addEventListener('click', function() {
-            const textToCopy = `<%= paste.content.replace(/^\s+|\s+$/g, '') %>`; // Trim spaces
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                alert('Text copied to clipboard!');
-            }).catch(err => {
-                console.error('Error copying text: ', err);
+        // Ensure DOM is loaded before adding event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const content = document.getElementById('paste-content').innerText.trim();
+
+            // Copy to clipboard function
+            document.getElementById('copy-button').addEventListener('click', () => {
+                navigator.clipboard.writeText(content).then(() => {
+                    alert('Text copied to clipboard!');
+                }).catch(err => {
+                    console.error('Error copying text:', err);
+                });
             });
-        });
 
-        // Download as .txt function using Blob
-        document.getElementById('download-button').addEventListener('click', function() {
-            // Get the title and content
-            const title = `<%= paste.title %>` || 'Untitled'; // Default title if none
-            const content = `<%= paste.content.replace(/^\s+|\s+$/g, '') %>`; // Trim spaces
+            // Download as .txt function using Blob
+            document.getElementById('download-button').addEventListener('click', () => {
+                const title = `<%= paste.title %>` || 'Untitled';
+                const blob = new Blob([content], { type: 'text/plain' });
 
-            // Create a Blob from the content
-            const blob = new Blob([content], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${title}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
 
-            // Create a link element
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `${title}.txt`; // Set the file name
-
-            // Append link to the body
-            document.body.appendChild(link);
-            link.click(); // Simulate click to trigger download
-
-            // Clean up and remove the link
-            document.body.removeChild(link);
-        });
-
-        // Open raw paste function
-        document.getElementById('raw-button').addEventListener('click', function() {
-            const pasteId = `<%= paste.id %>`; // Assuming there's an ID for the paste
-            const rawUrl = `/api/pastes/plain/${pasteId}`;
-            window.open(rawUrl, '_blank'); // Open in a new tab
+            // Open raw paste function
+            document.getElementById('raw-button').addEventListener('click', () => {
+                const pasteId = `<%= paste.id %>`;
+                const rawUrl = `/api/pastes/plain/${pasteId}`;
+                window.open(rawUrl, '_blank');
+            });
         });
     </script>
 </body>
