@@ -10,11 +10,13 @@ const shortId = require('shortid');
 const app = express();
 app.set('view engine', 'ejs');
 const PORT = process.env.PORT || 3000;
-const mongoAtlasUri = process.env.MONGO_ATLAS_URI; 
+const mongoAtlasUri = process.env.MONGO_ATLAS_URI;
 
 mongoose.connect(mongoAtlasUri, { serverSelectionTimeoutMS: 3000 });
 const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.on('error', (error) => {
+    console.error('MongoDB connection error:', error);
+});
 
 // Configure session middleware
 app.use(session({
@@ -34,6 +36,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Middleware to parse JSON request body
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Support URL-encoded bodies
 
 // Main route / Login
 app.get(['/', '/login_page'], (req, res) => {
@@ -81,35 +84,48 @@ const User = mongoose.model('User', userSchema);
 
 // User registration endpoint
 app.post('/register', async (req, res) => {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+        return res.status(400).json({ error: 'All fields are required.' });
+    }
+
     try {
-        const { username, email, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({ username, email, password: hashedPassword });
         await user.save();
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        if (err.code === 11000) {
+            return res.status(409).json({ error: 'Username or email already exists.' });
+        }
+        res.status(500).json({ error: 'An error occurred during registration.' });
     }
 });
 
 // User login endpoint
 app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required.' });
+    }
+
     try {
-        const { username, password } = req.body;
         const user = await User.findOne({ username });
-        
+
         // Check if user exists and password is correct
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ message: 'Invalid username or password' });
+            return res.status(401).json({ error: 'Invalid username or password.' });
         }
 
         // Set userId in session
         req.session.userId = user._id;
-        
+
         // Send success response
         res.status(200).json({ message: 'Login successful' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ error: 'An error occurred during login.' });
     }
 });
 
@@ -126,14 +142,19 @@ pasteSchema.statics.deleteExpiredPastes = async function() {
 
 // REST API endpoints
 app.post('/api/pastes', async (req, res) => {
+    const { title, content, expiration_date } = req.body;
+
+    if (!title || !content) {
+        return res.status(400).json({ error: 'Title and content are required.' });
+    }
+
     try {
-        const { title, content, expiration_date } = req.body;
         const author = req.session.userId;
         const paste = new Paste({ title, content, expiration_date, author });
         await paste.save();
         res.status(201).json(paste);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ error: 'An error occurred while creating the paste.' });
     }
 });
 
@@ -143,7 +164,7 @@ app.get('/api/pastes', async (req, res) => {
         const pastes = await Paste.find({ author: userId }).exec();
         res.json(pastes);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ error: 'An error occurred while retrieving pastes.' });
     }
 });
 
@@ -151,11 +172,11 @@ app.get('/api/pastes/:id', async (req, res) => {
     try {
         const paste = await Paste.findById(req.params.id).exec();
         if (!paste) {
-            return res.status(404).json({ message: 'Paste not found' });
+            return res.status(404).json({ error: 'Paste not found.' });
         }
         res.json(paste);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ error: 'An error occurred while retrieving the paste.' });
     }
 });
 
@@ -165,7 +186,7 @@ app.get('/api/pastes/plain/:id', async (req, res) => {
         if (!paste) {
             return res.status(404).send('Paste not found'); // Send plain text for 404
         }
-        
+
         // Set the content type to plain text and send the paste content
         res.set('Content-Type', 'text/plain');
         res.send(paste.content); // Assuming 'content' is the field that contains the paste text
@@ -178,50 +199,65 @@ app.get('/api/pastes/:id/page', async (req, res) => {
     try {
         const paste = await Paste.findById(req.params.id).exec();
         if (!paste) {
-            return res.status(404).json({ message: 'Paste not found' });
+            return res.status(404).json({ error: 'Paste not found.' });
         }
         const author = await User.findById(paste.author).exec();
         paste.author = author;
         res.render('paste', { paste });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ error: 'An error occurred while retrieving the paste.' });
     }
 });
 
 app.put('/api/pastes/:id', async (req, res) => {
+    const { title, content, expiration_date } = req.body;
+
+    if (!title || !content) {
+        return res.status(400).json({ error: 'Title and content are required.' });
+    }
+
     try {
-        const { title, content, expiration_date } = req.body;
         const updatedPaste = await Paste.findByIdAndUpdate(req.params.id, { title, content, expiration_date }, { new: true }).exec();
+        if (!updatedPaste) {
+            return res.status(404).json({ error: 'Paste not found.' });
+        }
         res.json(updatedPaste);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ error: 'An error occurred while updating the paste.' });
     }
 });
 
 app.delete('/api/pastes/:id', async (req, res) => {
     try {
-        await Paste.findByIdAndDelete(req.params.id).exec();
+        const deletedPaste = await Paste.findByIdAndDelete(req.params.id).exec();
+        if (!deletedPaste) {
+            return res.status(404).json({ error: 'Paste not found.' });
+        }
         res.status(204).send();
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ error: 'An error occurred while deleting the paste.' });
     }
 });
 
 app.post('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
-            return res.status(500).json({ message: 'Could not log out' });
+            return res.status(500).json({ error: 'Could not log out.' });
         }
-        res.status(200).json({ message: 'Logged out successfully' });
+        res.status(200).json({ message: 'Logged out successfully.' });
     });
 });
 
 app.get('/current_user', async (req, res) => {
     if (req.session && req.session.userId) {
-        const user = await User.findById(req.session.userId).exec();
-        res.json(user);
+        try {
+            const user = await User.findById(req.session.userId).exec();
+            res.json(user);
+        } catch (err) {
+            res.status(500).json({ error: 'An error occurred while retrieving the user.' });
+        }
     } else {
-        res.status(401).json({ message: 'Not logged in' });
+        res.status(401).json({ error: 'Not logged in.' });
     }
 });
 
@@ -238,8 +274,8 @@ app.listen(PORT, () => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+    console.error('Error occurred:', err.stack);
+    res.status(500).json({ error: 'Something broke!' });
 });
 
 module.exports = app;
