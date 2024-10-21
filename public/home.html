@@ -63,6 +63,25 @@
             font-size: 14px;
             color: #b0b0b0; /* Lighter gray for footer */
         }
+        .button-container {
+            display: flex;
+            justify-content: center; /* Center buttons */
+            gap: 20px; /* Space between buttons */
+            margin: 20px 0;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #36a2f5; /* Button color */
+            color: #fff; /* White text */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2a8dcf; /* Darker blue on hover */
+        }
     </style>
 </head>
 <body>
@@ -81,6 +100,10 @@
             <p id="usage">API Usage: Loading...</p>
             <p id="lastRequestDate">Last Request Date: Loading...</p>
             <p id="plan">Plan: Loading...</p>
+        </div>
+        <div class="button-container">
+            <button class="button" onclick="window.open('/pastes', '_self')">Pastebin</button>
+            <button class="button" onclick="window.open('https://rbxstats.xyz', '_blank')">RBXStats</button>
         </div>
         <div class="footer">
             &copy; 2024 Your Company Name. All rights reserved.
