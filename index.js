@@ -59,7 +59,7 @@ app.get('/register_page', (req, res) => {
 });
 
 // Main route / Login
-app.get(['/', '/pastes'], (req, res) => {
+app.get(['/', '/paste'], (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'paste.html'));
 });
 
@@ -270,6 +270,63 @@ app.post('/api/pastes', async (req, res) => {
     } catch (err) {
         console.error('Error while creating the paste:', err);
         res.status(500).json({ error: 'An error occurred while creating the paste.' });
+    }
+});
+
+app.get('/success', async (req, res) => {
+    const { order, email } = req.query; // Get both order ID and user email from the query parameters
+
+    if (!order || !email) {
+        return res.status(400).send('Order ID and email are required.');
+    }
+
+    try {
+        // Fetch order details from the external API
+        const options = {
+            method: 'GET',
+            headers: {
+                accept: 'application/json',
+                Authorization: `Bearer ${process.env.ApiKey}`, // Use your API key here
+            },
+        };
+
+        const response = await fetch(`https://sell.app/api/v2/invoices/${order}`, options);
+        const orderData = await response.json();
+
+        // Check if the provided email matches the customer email from the order
+        if (email !== orderData.customer_information.email) {
+            return res.status(403).send('Unauthorized: Email does not match the order.');
+        }
+
+        // Get the product price and determine the plan
+        const price = parseFloat(orderData.payment.gateway.data.total.base);
+        let plan;
+
+        if (price === 3.99) {
+            plan = 1; // Starter
+        } else if (price === 7.99) {
+            plan = 2; // Pro
+        } else if (price === 10.99) {
+            plan = 3; // Enterprise
+        } else {
+            return res.status(400).send('Invalid price for the order.');
+        }
+
+        // Assuming you have a User model to update the user plan
+        const user = await User.findOne({ email: email });
+        if (!user) {
+            return res.status(404).send('User not found.');
+        }
+
+        // Update user plan
+        user.plan = plan;
+        await user.save();
+
+        // Render the EJS view with the data
+        res.render('success', { orderData, price, plan });
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        res.status(500).send('An error occurred while processing your request.');
     }
 });
 
