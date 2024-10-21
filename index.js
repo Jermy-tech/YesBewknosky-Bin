@@ -6,6 +6,11 @@ const cron = require('node-cron');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const shortId = require('shortid');
+const crypto = require('crypto'); // For generating API keys
+const dotenv = require('dotenv');
+
+// Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -48,6 +53,11 @@ app.get('/register_page', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
+// Main route / Login
+app.get(['/', '/paste'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'paste.html'));
+});
+
 // Serve pastes page
 function checkAuthentication(req, res, next) {
     if (req.session && req.session.userId) {
@@ -57,7 +67,7 @@ function checkAuthentication(req, res, next) {
     }
 }
 
-app.get('/pastes', checkAuthentication, (req, res) => {
+app.get('/dashboard', checkAuthentication, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
 
@@ -73,28 +83,59 @@ const pasteSchema = new mongoose.Schema({
 
 const Paste = mongoose.model('Paste', pasteSchema);
 
-// Define schema and model for users
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    apiKey: { type: String, unique: true },
+    plan: { type: Number, default: 0, min: 0, max: 3 }, // Plan from 0 to 3
+    apiUsage: { type: Number, default: 0 }, // Track daily usage
+    lastRequestDate: { type: Date, default: Date.now } // Store last request date
 });
 
 const User = mongoose.model('User', userSchema);
 
-// User registration endpoint
+// Function to generate a URL-safe API key
+function generateApiKey() {
+    return crypto.randomBytes(24) // Generate 24 random bytes
+        .toString('base64') // Convert to Base64
+        .replace(/\+/g, '-') // Replace '+' with '-'
+        .replace(/\//g, '_') // Replace '/' with '_'
+        .replace(/=+$/, ''); // Remove trailing '=' characters
+}
+
 app.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, plan = 0 } = req.body; // Default plan is 0
 
     if (!username || !email || !password) {
         return res.status(400).json({ error: 'All fields are required.' });
     }
 
+    if (plan < 0 || plan > 3) {
+        return res.status(400).json({ error: 'Invalid plan value. It should be between 0 and 3.' });
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ username, email, password: hashedPassword });
+        const apiKey = generateApiKey();
+
+        const user = new User({
+            username, 
+            email, 
+            password: hashedPassword, 
+            apiKey, 
+            plan ,
+            apiUsage: 0,
+            lastRequestDate: Date.now()
+
+        });
+
         await user.save();
-        res.status(201).json({ message: 'User registered successfully' });
+        res.status(201).json({ 
+            message: 'User registered successfully', 
+            apiKey, 
+            plan: user.plan 
+        });
     } catch (err) {
         if (err.code === 11000) {
             return res.status(409).json({ error: 'Username or email already exists.' });
@@ -252,7 +293,14 @@ app.get('/current_user', async (req, res) => {
     if (req.session && req.session.userId) {
         try {
             const user = await User.findById(req.session.userId).exec();
-            res.json(user);
+            res.json({ 
+                username: user.username, 
+                email: user.email, 
+                apiKey: user.apiKey, 
+                plan: user.plan,
+                apiUsage: user.apiUsage,
+                lastRequestDate: user.lastRequestDate
+            });
         } catch (err) {
             res.status(500).json({ error: 'An error occurred while retrieving the user.' });
         }
