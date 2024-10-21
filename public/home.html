@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard</title>
+    <title>User Dashboard - Rbxstats</title>
     <link rel="icon" type="image/x-icon" href="https://forum.rbxstats.xyz/assets/logo-hrnbtj2z.png">
     <style>
         body {
@@ -25,34 +25,34 @@
             z-index: 10;
         }
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Space between sections */
+        }
+        .card {
             background-color: #1e1e1e; /* Card background */
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            transition: background-color 0.3s;
+        }
+        .card:hover {
+            background-color: #2a2a2a; /* Lighter on hover */
         }
         h1 {
             font-size: 28px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
-        .user-info {
-            margin: 20px 0;
-            padding: 20px;
-            background-color: #2a2a2a; /* Darker card background */
-            border-radius: 8px;
-            transition: background-color 0.3s;
-        }
-        .user-info:hover {
-            background-color: #333; /* Lighter on hover */
-        }
-        .user-info h2 {
+        .card h2 {
             margin: 0 0 10px 0;
             font-size: 24px;
             border-bottom: 2px solid #444; /* Bottom border */
             padding-bottom: 10px;
         }
-        .user-info p {
+        .card p {
             margin: 5px 0;
             font-size: 18px;
         }
@@ -65,8 +65,7 @@
         }
         .button-container {
             display: flex;
-            justify-content: center; /* Center buttons */
-            gap: 20px; /* Space between buttons */
+            justify-content: space-between; /* Space between buttons */
             margin: 20px 0;
         }
         .button {
@@ -82,32 +81,62 @@
         .button:hover {
             background-color: #2a8dcf; /* Darker blue on hover */
         }
+        .copy-button {
+            background-color: #4caf50; /* Green for copy button */
+        }
+        .copy-button:hover {
+            background-color: #45a049; /* Darker green on hover */
+        }
+        .logout-button {
+            background-color: #f44336; /* Red for logout button */
+        }
+        .logout-button:hover {
+            background-color: #e53935; /* Darker red on hover */
+        }
+        .hidden {
+            display: none;
+        }
+        .show-button {
+            background-color: #ff9800; /* Orange for show button */
+        }
+        .show-button:hover {
+            background-color: #fb8c00; /* Darker orange on hover */
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>User Dashboard</h1>
+    <h1>Rbxstats User Dashboard</h1>
+    <button id="logoutBtn" class="button logout-button">Logout</button>
 </header>
 
 <main>
     <div class="container">
-        <div class="user-info">
+        <div class="card">
             <h2>User Information</h2>
-            <p id="username">Loading username...</p>
-            <p id="email">Loading email...</p>
-            <p id="apiKey">Loading API Key...</p>
+            <p id="username">Username: Loading...</p>
+            <p id="email">Email: Loading...</p>
+            <p id="apiKeyLabel">API Key: <span id="apiKeyValue" class="hidden">Loading...</span></p>
+            <button class="button show-button" id="showApiKeyBtn">Show API Key</button>
+            <button class="button copy-button" id="copyApiKeyBtn">Copy API Key</button>
+        </div>
+        <div class="card">
+            <h2>API Usage</h2>
             <p id="usage">API Usage: Loading...</p>
             <p id="lastRequestDate">Last Request Date: Loading...</p>
             <p id="plan">Plan: Loading...</p>
         </div>
-        <div class="button-container">
-            <button class="button" onclick="window.open('/pastes', '_self')">Pastebin</button>
-            <button class="button" onclick="window.open('https://rbxstats.xyz', '_blank')">RBXStats</button>
+        <div class="card">
+            <h2>Quick Links</h2>
+            <div class="button-container">
+                <button class="button" onclick="window.open('/pastes', '_self')">Pastebin</button>
+                <button class="button" onclick="window.open('https://rbxstats.xyz', '_blank')">RBXStats</button>
+            </div>
         </div>
-        <div class="footer">
-            &copy; 2024 Your Company Name. All rights reserved.
-        </div>
+    </div>
+    <div class="footer">
+        &copy; 2024 Rbxstats. All rights reserved.
     </div>
 </main>
 
@@ -128,16 +157,50 @@
         if (currentUser) {
             document.getElementById('username').textContent = `Username: ${currentUser.username}`;
             document.getElementById('email').textContent = `Email: ${currentUser.email}`;
-            document.getElementById('apiKey').textContent = `API Key: ${currentUser.apiKey}`;
+            document.getElementById('apiKeyValue').textContent = currentUser.apiKey; // Updated to use a span
             document.getElementById('usage').textContent = `API Usage: ${currentUser.apiUsage}`;
             document.getElementById('lastRequestDate').textContent = `Last Request Date: ${currentUser.lastRequestDate}`;
             document.getElementById('plan').textContent = `Plan: ${currentUser.plan}`;
         } else {
-            document.getElementById('usernames').textContent = 'Error loading user information.';
+            document.getElementById('username').textContent = 'Error loading user information.';
         }
     }
 
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('API Key copied to clipboard!');
+        }).catch(err => {
+            console.error('Error copying to clipboard:', err);
+        });
+    }
+
+    document.getElementById('showApiKeyBtn').addEventListener('click', () => {
+        const apiKeyValue = document.getElementById('apiKeyValue');
+        if (apiKeyValue.classList.contains('hidden')) {
+            apiKeyValue.classList.remove('hidden');
+            document.getElementById('showApiKeyBtn').textContent = 'Hide API Key';
+        } else {
+            apiKeyValue.classList.add('hidden');
+            document.getElementById('showApiKeyBtn').textContent = 'Show API Key';
+        }
+    });
+
+    document.getElementById('copyApiKeyBtn').addEventListener('click', () => {
+        const apiKey = document.getElementById('apiKeyValue').textContent;
+        copyToClipboard(apiKey);
+    });
+
     displayUserDashboard();
+
+    // Add event listener to logout button
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        try {
+            await axios.post('/logout');
+            window.location.href = '/login_page';
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    });
 </script>
 
 </body>
