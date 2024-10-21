@@ -13,9 +13,9 @@ const axios = require('axios'); // Ensure axios is imported
 // Load environment variables from .env file
 dotenv.config();
 
-const SignupKey = process.env.SIGNUP_KEY; // Use your environment variables
-const LoginKey = process.env.LOGIN_KEY;
-const PasteKey = process.env.PASTE_KEY;
+const SignupKey = process.env.SignupKey; // Use your environment variables
+const LoginKey = process.env.LoginKey;
+const PasteKey = process.env.PasteKey;
 
 const app = express();
 app.set('view engine', 'ejs');
