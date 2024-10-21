@@ -122,16 +122,24 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        // Verify the Turnstile response with Cloudflare
-        const verificationResponse = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
-            params: {
-                secret: SignupKey, // Your secret key for verification
-                response: turnstileResponse
-            }
+        const ip = req.headers['cf-connecting-ip']; // Get IP address from header
+
+        // Validate the token by calling the
+        // "/siteverify" API endpoint.
+        let formData = new FormData();
+        formData.append("secret", SignupKey);
+        formData.append("response", turnstileResponse);
+        formData.append("remoteip", ip);
+
+        const url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+        const result = await fetch(url, {
+            body: formData,
+            method: "POST",
         });
-
-        const { success } = verificationResponse.success;
-
+        
+        const outcome = await result.json();
+        const success = outcome.success;
+        
         if (!success) {
             return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
         }
@@ -175,15 +183,23 @@ app.post('/login', async (req, res) => {
     }
 
     try {
-        // Verify the Turnstile response with Cloudflare
-        const verificationResponse = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
-            params: {
-                secret: LoginKey, // Your secret key for verification
-                response: turnstileResponse
-            }
-        });
+        const ip = req.headers['cf-connecting-ip']; // Get IP address from header
 
-        const { success } = verificationResponse.success;
+        // Validate the token by calling the
+        // "/siteverify" API endpoint.
+        let formData = new FormData();
+        formData.append("secret", LoginKey);
+        formData.append("response", turnstileResponse);
+        formData.append("remoteip", ip);
+
+        const url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+        const result = await fetch(url, {
+            body: formData,
+            method: "POST",
+        });
+        
+        const outcome = await result.json();
+        const success = outcome.success;
 
         if (!success) {
             return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
@@ -228,15 +244,23 @@ app.post('/api/pastes', async (req, res) => {
     }
 
     try {
-        // Verify the Turnstile response with Cloudflare
-        const verificationResponse = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
-            params: {
-                secret: PasteKey, // Your secret key for verification
-                response: turnstileResponse
-            }
-        });
+        const ip = req.headers['cf-connecting-ip']; // Get IP address from header
 
-        const { success } = verificationResponse.success;
+        // Validate the token by calling the
+        // "/siteverify" API endpoint.
+        let formData = new FormData();
+        formData.append("secret", PasteKey);
+        formData.append("response", turnstileResponse);
+        formData.append("remoteip", ip);
+
+        const url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+        const result = await fetch(url, {
+            body: formData,
+            method: "POST",
+        });
+        
+        const outcome = await result.json();
+        const success = outcome.success;
 
         if (!success) {
             return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
