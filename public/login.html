@@ -126,7 +126,7 @@
                 const response = await axios.post('/login', Object.fromEntries(formData));
                 if (response.status === 200) {
                     alert('Login successful');
-                    window.location.href = '/pastes';
+                    window.location.href = '/dashboard';
                 } else {
                     alert('Login failed. Please check your credentials.');
                 }
