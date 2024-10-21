@@ -12,6 +12,10 @@ const dotenv = require('dotenv');
 // Load environment variables from .env file
 dotenv.config();
 
+const SignupKey = process.env.SIGNUP_KEY; // Use your environment variables
+const LoginKey = process.env.LOGIN_KEY;
+const PasteKey = process.env.PASTE_KEY;
+
 const app = express();
 app.set('view engine', 'ejs');
 const PORT = process.env.PORT || 3000;
@@ -105,9 +109,10 @@ function generateApiKey() {
 }
 
 app.post('/register', async (req, res) => {
-    const { username, email, password, plan = 0 } = req.body; // Default plan is 0
+    const { username, email, password, plan = 0, 'cf-turnstile-response': turnstileResponse } = req.body; // Destructure the Turnstile response
 
-    if (!username || !email || !password) {
+    // Validate required fields
+    if (!username || !email || !password || !turnstileResponse) {
         return res.status(400).json({ error: 'All fields are required.' });
     }
 
@@ -116,43 +121,73 @@ app.post('/register', async (req, res) => {
     }
 
     try {
+        // Verify the Turnstile response with Cloudflare
+        const verificationResponse = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
+            params: {
+                secret: SignupKey, // Your secret key for verification
+                response: turnstileResponse
+            }
+        });
+
+        const { success } = verificationResponse.data;
+
+        if (!success) {
+            return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
+        }
+
+        // Hash the password and create the user if CAPTCHA is successful
         const hashedPassword = await bcrypt.hash(password, 10);
         const apiKey = generateApiKey();
 
         const user = new User({
-            username, 
-            email, 
-            password: hashedPassword, 
-            apiKey, 
-            plan ,
+            username,
+            email,
+            password: hashedPassword,
+            apiKey,
+            plan,
             apiUsage: 0,
             lastRequestDate: Date.now()
-
         });
 
         await user.save();
-        res.status(201).json({ 
-            message: 'User registered successfully', 
-            apiKey, 
-            plan: user.plan 
+        res.status(201).json({
+            message: 'User registered successfully',
+            apiKey,
+            plan: user.plan
         });
     } catch (err) {
         if (err.code === 11000) {
             return res.status(409).json({ error: 'Username or email already exists.' });
         }
+        console.error('Error during registration:', err);
         res.status(500).json({ error: 'An error occurred during registration.' });
     }
 });
 
 // User login endpoint
 app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, 'cf-turnstile-response': turnstileResponse } = req.body; // Destructure Turnstile response
 
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required.' });
+    // Validate required fields
+    if (!username || !password || !turnstileResponse) {
+        return res.status(400).json({ error: 'Username, password, and CAPTCHA response are required.' });
     }
 
     try {
+        // Verify the Turnstile response with Cloudflare
+        const verificationResponse = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
+            params: {
+                secret: LoginKey, // Your secret key for verification
+                response: turnstileResponse
+            }
+        });
+
+        const { success } = verificationResponse.data;
+
+        if (!success) {
+            return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
+        }
+
         const user = await User.findOne({ username });
 
         // Check if user exists and password is correct
@@ -166,6 +201,7 @@ app.post('/login', async (req, res) => {
         // Send success response
         res.status(200).json({ message: 'Login successful' });
     } catch (err) {
+        console.error('Error during login:', err);
         res.status(500).json({ error: 'An error occurred during login.' });
     }
 });
@@ -183,18 +219,34 @@ pasteSchema.statics.deleteExpiredPastes = async function() {
 
 // REST API endpoints
 app.post('/api/pastes', async (req, res) => {
-    const { title, content, expiration_date } = req.body;
+    const { title, content, expiration_date, 'cf-turnstile-response': turnstileResponse } = req.body; // Destructure Turnstile response
 
-    if (!title || !content) {
-        return res.status(400).json({ error: 'Title and content are required.' });
+    // Validate required fields
+    if (!title || !content || !turnstileResponse) {
+        return res.status(400).json({ error: 'Title, content, and CAPTCHA response are required.' });
     }
 
     try {
-        const author = req.session.userId;
+        // Verify the Turnstile response with Cloudflare
+        const verificationResponse = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', null, {
+            params: {
+                secret: PasteKey, // Your secret key for verification
+                response: turnstileResponse
+            }
+        });
+
+        const { success } = verificationResponse.data;
+
+        if (!success) {
+            return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
+        }
+
+        const author = req.session.userId; // Assuming user is logged in and userId is stored in session
         const paste = new Paste({ title, content, expiration_date, author });
         await paste.save();
         res.status(201).json(paste);
     } catch (err) {
+        console.error('Error while creating the paste:', err);
         res.status(500).json({ error: 'An error occurred while creating the paste.' });
     }
 });
