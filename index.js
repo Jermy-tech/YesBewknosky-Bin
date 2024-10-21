@@ -59,7 +59,7 @@ app.get('/register_page', (req, res) => {
 });
 
 // Main route / Login
-app.get(['/', '/paste'], (req, res) => {
+app.get(['/', '/pastes'], (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'paste.html'));
 });
 
