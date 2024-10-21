@@ -200,7 +200,7 @@ app.post('/login', async (req, res) => {
         const outcome = await result.json();
 
         if (!outcome.success) {
-            return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
+            return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.', outcome});
         }
 
         const user = await User.findOne({ username });
@@ -217,7 +217,7 @@ app.post('/login', async (req, res) => {
         res.status(200).json({ message: 'Login successful' });
     } catch (err) {
         console.error('Error during login:', err);
-        res.status(500).json({ error: 'An error occurred during login.' });
+        res.status(500).json({ error: 'An error occurred during login.'});
     }
 });
 
