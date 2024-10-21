@@ -138,9 +138,8 @@ app.post('/register', async (req, res) => {
         });
         
         const outcome = await result.json();
-        const success = outcome.success;
         
-        if (!success) {
+        if (!outcome.success) {
             return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
         }
 
@@ -199,9 +198,8 @@ app.post('/login', async (req, res) => {
         });
         
         const outcome = await result.json();
-        const success = outcome.success;
 
-        if (!success) {
+        if (!outcome.success) {
             return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
         }
 
@@ -260,9 +258,8 @@ app.post('/api/pastes', async (req, res) => {
         });
         
         const outcome = await result.json();
-        const success = outcome.success;
 
-        if (!success) {
+        if (!outcome.success) {
             return res.status(400).json({ error: 'CAPTCHA verification failed. Please try again.' });
         }
 
