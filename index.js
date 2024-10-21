@@ -8,6 +8,7 @@ const MongoStore = require('connect-mongo');
 const shortId = require('shortid');
 const crypto = require('crypto'); // For generating API keys
 const dotenv = require('dotenv');
+const axios = require('axios'); // Ensure axios is imported
 
 // Load environment variables from .env file
 dotenv.config();
