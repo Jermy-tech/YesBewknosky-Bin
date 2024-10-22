@@ -274,59 +274,61 @@ app.post('/api/pastes', async (req, res) => {
 });
 
 app.get('/success', async (req, res) => {
-    const { order, email } = req.query; // Get both order ID and user email from the query parameters
-
-    if (!order || !email) {
-        return res.status(400).send('Order ID and email are required.');
-    }
-
     try {
-        // Fetch order details from the external API
-        const options = {
+        // Destructure and validate query parameters
+        const { order, email } = req.query;
+        if (!order || !email) {
+            return res.status(400).send('Bad Request: Order ID and email are required.');
+        }
+
+        // Sanitize inputs to prevent injection attacks
+        const sanitizedOrder = encodeURIComponent(order);
+        const sanitizedEmail = encodeURIComponent(email);
+
+        // Fetch order details securely from the external API
+        const response = await fetch(`https://sell.app/api/v2/invoices/${sanitizedOrder}`, {
             method: 'GET',
             headers: {
                 accept: 'application/json',
-                Authorization: `Bearer ${process.env.ApiKey}`, // Use your API key here
+                Authorization: `Bearer ${process.env.ApiKey}`,
             },
-        };
+        });
 
-        const response = await fetch(`https://sell.app/api/v2/invoices/${order}`, options);
+        if (!response.ok) {
+            return res.status(response.status).send('Failed to fetch order details.');
+        }
+
         const orderData = await response.json();
 
-        // Check if the provided email matches the customer email from the order
-        if (email !== orderData.customer_information.email) {
+        // Validate if the email matches the customer email from the order
+        if (sanitizedEmail !== encodeURIComponent(orderData.customer_information.email)) {
             return res.status(403).send('Unauthorized: Email does not match the order.');
         }
 
-        // Get the product price and determine the plan
+        // Determine plan based on the product price
         const price = parseFloat(orderData.payment.gateway.data.total.base);
-        let plan;
+        const planMap = { 3.99: 1, 7.99: 2, 10.99: 3 };
+        const plan = planMap[price];
 
-        if (price === 3.99) {
-            plan = 1; // Starter
-        } else if (price === 7.99) {
-            plan = 2; // Pro
-        } else if (price === 10.99) {
-            plan = 3; // Enterprise
-        } else {
+        if (!plan) {
             return res.status(400).send('Invalid price for the order.');
         }
 
-        // Assuming you have a User model to update the user plan
-        const user = await User.findOne({ email: email });
+        // Find the user based on the email
+        const user = await User.findOne({ email: sanitizedEmail });
         if (!user) {
             return res.status(404).send('User not found.');
         }
 
-        // Update user plan
+        // Update the user's plan and save
         user.plan = plan;
         await user.save();
 
-        // Render the EJS view with the data
+        // Render the success page with relevant data
         res.render('success', { orderData, price, plan });
     } catch (error) {
-        console.error('Error fetching order details:', error);
-        res.status(500).send('An error occurred while processing your request.');
+        console.error('Error processing request:', error);
+        res.status(500).send('An internal error occurred.');
     }
 });
 
