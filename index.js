@@ -277,32 +277,78 @@ app.get('/success', async (req, res) => {
     try {
         // Destructure and validate query parameters
         const { order, email } = req.query;
+
         if (!order || !email) {
-            return res.status(400).send('Bad Request: Order ID and email are required.');
+            return res.status(400).json({
+                status: 'error',
+                message: 'Bad Request: Order ID and email are required.',
+                code: 'MISSING_PARAMS'
+            });
         }
 
         // Sanitize inputs to prevent injection attacks
         const sanitizedOrder = encodeURIComponent(order);
         const sanitizedEmail = encodeURIComponent(email);
 
-        // Fetch order details securely from the external API
-        const response = await fetch(`https://sell.app/api/v2/invoices/${sanitizedOrder}`, {
-            method: 'GET',
-            headers: {
-                accept: 'application/json',
-                Authorization: `Bearer ${process.env.ApiKey}`,
-            },
-        });
-
-        if (!response.ok) {
-            return res.status(response.status).send('Failed to fetch order details.');
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(decodeURIComponent(sanitizedEmail))) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid email format.',
+                code: 'INVALID_EMAIL'
+            });
         }
 
-        const orderData = await response.json();
+        // Fetch order details securely from the external API
+        let response;
+        try {
+            response = await fetch(`https://sell.app/api/v2/invoices/${sanitizedOrder}`, {
+                method: 'GET',
+                headers: {
+                    accept: 'application/json',
+                    Authorization: `Bearer ${process.env.ApiKey}`,
+                },
+            });
+        } catch (fetchError) {
+            console.error('Fetch error:', fetchError);
+            return res.status(502).json({
+                status: 'error',
+                message: 'Failed to connect to the external API.',
+                code: 'API_CONNECTION_ERROR'
+            });
+        }
+
+        if (!response.ok) {
+            const errorMsg = await response.text();
+            console.warn(`API responded with ${response.status}: ${errorMsg}`);
+            return res.status(response.status).json({
+                status: 'error',
+                message: 'Failed to fetch order details.',
+                code: 'API_ERROR',
+                details: errorMsg
+            });
+        }
+
+        let orderData;
+        try {
+            orderData = await response.json();
+        } catch (jsonError) {
+            console.error('Error parsing API response:', jsonError);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Invalid response format from the external API.',
+                code: 'INVALID_API_RESPONSE'
+            });
+        }
 
         // Validate if the email matches the customer email from the order
         if (sanitizedEmail !== encodeURIComponent(orderData.customer_information.email)) {
-            return res.status(403).send('Unauthorized: Email does not match the order.');
+            return res.status(403).json({
+                status: 'error',
+                message: 'Unauthorized: Email does not match the order.',
+                code: 'EMAIL_MISMATCH'
+            });
         }
 
         // Determine plan based on the product price
@@ -311,24 +357,58 @@ app.get('/success', async (req, res) => {
         const plan = planMap[price];
 
         if (!plan) {
-            return res.status(400).send('Invalid price for the order.');
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid price for the order.',
+                code: 'INVALID_PRICE'
+            });
         }
 
         // Find the user based on the email
-        const user = await User.findOne({ email: sanitizedEmail });
+        let user;
+        try {
+            user = await User.findOne({ email: sanitizedEmail });
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Database query failed.',
+                code: 'DB_ERROR'
+            });
+        }
+
         if (!user) {
-            return res.status(404).send('User not found.');
+            return res.status(404).json({
+                status: 'error',
+                message: 'User not found.',
+                code: 'USER_NOT_FOUND'
+            });
         }
 
         // Update the user's plan and save
-        user.plan = plan;
-        await user.save();
+        try {
+            user.plan = plan;
+            await user.save();
+        } catch (saveError) {
+            console.error('Error saving user data:', saveError);
+            return res.status(500).json({
+                status: 'error',
+                message: 'Failed to update user plan.',
+                code: 'SAVE_ERROR'
+            });
+        }
 
         // Render the success page with relevant data
         res.render('success', { orderData, price, plan });
+
     } catch (error) {
-        console.error('Error processing request:', error);
-        res.status(500).send('An internal error occurred.');
+        console.error('Unexpected error processing request:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'An internal error occurred.',
+            code: 'INTERNAL_SERVER_ERROR',
+            details: error.message,
+        });
     }
 });
 
