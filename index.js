@@ -343,7 +343,7 @@ app.get('/success', async (req, res) => {
         }
 
         // Validate if the email matches the customer email from the order
-        if (sanitizedEmail !== encodeURIComponent(orderData.customer_information.email)) {
+        if (sanitizedEmail !== encodeURIComponent(orderData.gateway.data.customer_email)) {
             return res.status(403).json({
                 status: 'error',
                 message: 'Unauthorized: Email does not match the order.',
