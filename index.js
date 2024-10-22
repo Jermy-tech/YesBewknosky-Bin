@@ -9,6 +9,7 @@ const shortId = require('shortid');
 const crypto = require('crypto'); // For generating API keys
 const dotenv = require('dotenv');
 const axios = require('axios'); // Ensure axios is imported
+const fetch = require('node-fetch'); // Make sure to include this if you're using fetch
 
 // Load environment variables from .env file
 dotenv.config();
