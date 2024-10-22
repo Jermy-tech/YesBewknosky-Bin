@@ -408,7 +408,8 @@ app.get('/success', async (req, res) => {
             status: 'error',
             message: 'An internal error occurred.',
             code: 'INTERNAL_SERVER_sERROR',
-            details: (error.message, response.json()),
+            details: error.message,
+            response: response
         });
     }
 });
